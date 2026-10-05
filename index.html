@@ -38,7 +38,7 @@
     }
     canvas {
       display: block;
-      image-rendering: pixelated; /* Deixa os gráficos nítidos no estilo retro */
+      image-rendering: pixelated; /* Gráficos nítidos estilo retro */
     }
     .panel {
       margin-top: 12px;
@@ -102,6 +102,43 @@
       color: #94a3b8;
       box-shadow: none;
     }
+    .fullscreen-btn {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 3px 0 #0369a1;
+    }
+    .fullscreen-btn:hover {
+      background: #38bdf8;
+    }
+
+    /* Ajustes quando o navegador estiver em Tela Cheia */
+    :-webkit-full-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      width: 100%;
+      height: 100%;
+    }
+    :-moz-full-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      width: 100%;
+      height: 100%;
+    }
+    :fullscreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
 <body>
@@ -133,13 +170,14 @@
     </div>
 
     <button id="startBtn" onclick="startRace()">Iniciar Corrida!</button>
+    <button class="fullscreen-btn" onclick="toggleFullScreen()">🖥️ Tela Cheia</button>
   </div>
 
   <script>
     const canvas = document.getElementById("raceCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Grupos do Easter Egg
+    // Easter Egg
     const groupPink = ["Agatha", "Yasmin", "Maria"];
     const groupBlue = ["Kauê", "Gregório", "Frederico"];
 
@@ -182,7 +220,6 @@
     }
 
     function drawScene() {
-      // Céu Degradê Sunset/Sunny
       const skyGrad = ctx.createLinearGradient(0, 0, 0, 95);
       if (skyColorType === "pink") {
         skyGrad.addColorStop(0, "#f43f5e");
@@ -196,19 +233,16 @@
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, canvas.width, 95);
 
-      // Sol Retrô
       ctx.fillStyle = skyColorType === "pink" ? "#fef08a" : "#fff7ed";
       ctx.beginPath();
       ctx.arc(700, 45, 25, 0, Math.PI * 2);
       ctx.fill();
 
-      // Nuvens estilizadas
       ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       ctx.fillRect(100, 25, 60, 12);
       ctx.fillRect(120, 18, 40, 10);
       ctx.fillRect(400, 35, 80, 14);
 
-      // Cerca/Arquibancada ao Fundo
       ctx.fillStyle = "#94a3b8";
       ctx.fillRect(0, 85, canvas.width, 10);
       for (let x = 0; x < canvas.width; x += 30) {
@@ -216,20 +250,17 @@
         ctx.fillRect(x, 75, 4, 20);
       }
 
-      // Pista de Corrida (Terra)
-      ctx.fillStyle = "#15803d"; // Grama
+      ctx.fillStyle = "#15803d";
       ctx.fillRect(0, 95, canvas.width, 10);
 
-      ctx.fillStyle = "#a16207"; // Pista de terra
+      ctx.fillStyle = "#a16207";
       ctx.fillRect(0, 105, canvas.width, 315);
 
-      // Linhas divisorias
       ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
       for (let i = 0; i <= 6; i++) {
         ctx.fillRect(0, 105 + i * 48, canvas.width, 2);
       }
 
-      // Linha de Chegada em Xadrez
       const finishX = 700;
       for (let y = 105; y < 390; y += 12) {
         ctx.fillStyle = (y / 12) % 2 === 0 ? "#ffffff" : "#0f172a";
@@ -237,7 +268,6 @@
         ctx.fillRect(finishX + 10, y + (y / 12 % 2 === 0 ? 0 : 0), 10, 12);
       }
 
-      // Partículas de Poeira levantadas pelos cavalos
       dustParticles.forEach((p, index) => {
         ctx.fillStyle = `rgba(217, 119, 6, ${p.alpha})`;
         ctx.beginPath();
@@ -249,7 +279,6 @@
         if (p.alpha <= 0) dustParticles.splice(index, 1);
       });
 
-      // Desenhar Cavalos e Jóqueis
       runners.forEach((r) => {
         drawPixelHorse(r);
       });
@@ -259,16 +288,13 @@
       ctx.save();
       ctx.translate(r.x, r.y);
 
-      // Animação de Ciclo de Corrida (4 Frames de Trote)
       const frameIndex = Math.floor(r.frame) % 4;
 
-      // Sombra no Chão
       ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
       ctx.beginPath();
       ctx.ellipse(25, 32, 20, 6, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Posição das Pernas por Frame
       const legPositions = [
         { front1: 10, front2: -10, back1: -12, back2: 12, bodyY: 0 },
         { front1: 18, front2: -5, back1: -5, back2: 5, bodyY: -2 },
@@ -278,7 +304,6 @@
 
       const leg = legPositions[frameIndex];
 
-      // Pernas Traseiras (Escuras)
       ctx.strokeStyle = "#451a03";
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -286,40 +311,30 @@
       ctx.moveTo(35, 18 + leg.bodyY); ctx.lineTo(35 + leg.front2, 32);
       ctx.stroke();
 
-      // Corpo do Cavalo
       ctx.fillStyle = r.coat;
       ctx.fillRect(8, 8 + leg.bodyY, 32, 14);
 
-      // Pernas Dianteiras
       ctx.strokeStyle = r.coat;
       ctx.beginPath();
       ctx.moveTo(12, 18 + leg.bodyY); ctx.lineTo(12 + leg.back1, 32);
       ctx.moveTo(38, 18 + leg.bodyY); ctx.lineTo(38 + leg.front1, 32);
       ctx.stroke();
 
-      // Pescoço e Cabeça
       ctx.fillRect(32, 0 + leg.bodyY, 10, 14);
       ctx.fillRect(36, -4 + leg.bodyY, 12, 10);
 
-      // Crina (Cabelo do Cavalo)
       ctx.fillStyle = r.mane;
       ctx.fillRect(28, -2 + leg.bodyY, 6, 12);
-
-      // Rabo
       ctx.fillRect(2, 8 + leg.bodyY, 8, 12);
 
-      // --- ALUNO (JÓQUEI) ---
-      // Corpo / Camiseta
       ctx.fillStyle = r.jersey;
       ctx.fillRect(22, -6 + leg.bodyY, 10, 12);
 
-      // Cabeça / Capacete de Jóquei
       ctx.fillStyle = "#fde047";
       ctx.fillRect(24, -14 + leg.bodyY, 8, 8);
       ctx.fillStyle = r.cap;
-      ctx.fillRect(22, -16 + leg.bodyY, 12, 4); // Boné/Capacete
+      ctx.fillRect(22, -16 + leg.bodyY, 12, 4);
 
-      // Nome do Aluno
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 12px sans-serif";
       ctx.shadowColor = "black";
@@ -337,7 +352,6 @@
       runners.forEach((r) => {
         let speedBoost = Math.random() * 2.3;
 
-        // Vantagem lógica para o Vencedor sorteado no Easter Egg
         if (r.isWinner && r.x > 300) {
           speedBoost += 0.65;
         }
@@ -345,7 +359,6 @@
         r.x += 1.3 + speedBoost;
         r.frame += r.animSpeed;
 
-        // Criar fumaça/poeira no chão durante a corrida
         if (Math.random() < 0.4) {
           dustParticles.push({
             x: r.x + 5,
@@ -355,7 +368,6 @@
           });
         }
 
-        // Limite da linha de chegada
         if (r.x > 680) {
           r.x = 680;
         }
@@ -401,6 +413,27 @@
       document.getElementById("startBtn").disabled = true;
 
       resetRace();
+    }
+
+    // Função de Ativar/Desativar Tela Cheia
+    function toggleFullScreen() {
+      if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+          document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
     }
 
     function gameLoop() {
