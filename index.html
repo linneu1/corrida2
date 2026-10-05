@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grande Corrida Pixel Art 🏇</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+    h1 {
+      margin-bottom: 8px;
+      font-size: 26px;
+      color: #fbbf24;
+      text-shadow: 0 3px 6px rgba(0,0,0,0.8);
+      letter-spacing: 1px;
+    }
+    #game-container {
+      position: relative;
+      border: 4px solid #f59e0b;
+      border-radius: 12px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.9);
+      overflow: hidden;
+      background: #000;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated; /* Deixa os gráficos nítidos no estilo retro */
+    }
+    .panel {
+      margin-top: 12px;
+      background: #1e293b;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      max-width: 800px;
+      width: 100%;
+    }
+    .wallet {
+      font-size: 16px;
+      font-weight: bold;
+      color: #34d399;
+      background: #064e3b;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #059669;
+    }
+    label {
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+    select, input {
+      background: #334155;
+      color: #fff;
+      border: 1px solid #475569;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+    button {
+      background: #f59e0b;
+      color: #0f172a;
+      font-weight: bold;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: 0.2s;
+      box-shadow: 0 3px 0 #b45309;
+    }
+    button:hover {
+      background: #fbbf24;
+      transform: translateY(-1px);
+    }
+    button:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+    button:disabled {
+      background: #475569;
+      cursor: not-allowed;
+      color: #94a3b8;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🏇 Grande Corrida da Turma (Pixel Art Edition)</h1>
+
+  <div id="game-container">
+    <canvas id="raceCanvas" width="800" height="420"></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="wallet">💰 Saldo: R$ <span id="balance">100</span></div>
+
+    <div>
+      <label for="runnerSelect">Corredor:</label>
+      <select id="runnerSelect">
+        <option value="Agatha">Agatha</option>
+        <option value="Frederico">Frederico</option>
+        <option value="Yasmin">Yasmin</option>
+        <option value="Maria">Maria</option>
+        <option value="Kauê">Kauê</option>
+        <option value="Gregório">Gregório</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="betAmount">Aposta:</label>
+      <input type="number" id="betAmount" value="20" min="10" max="100" step="10" style="width: 70px;">
+    </div>
+
+    <button id="startBtn" onclick="startRace()">Iniciar Corrida!</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("raceCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Grupos do Easter Egg
+    const groupPink = ["Agatha", "Yasmin", "Maria"];
+    const groupBlue = ["Kauê", "Gregório", "Frederico"];
+
+    const runnersData = [
+      { name: "Agatha", coat: "#8d5b4c", mane: "#3d231d", jersey: "#ec4899", cap: "#f472b6" },
+      { name: "Frederico", coat: "#d97706", mane: "#78350f", jersey: "#2563eb", cap: "#60a5fa" },
+      { name: "Yasmin", coat: "#451a03", mane: "#1c0a00", jersey: "#9333ea", cap: "#c084fc" },
+      { name: "Maria", coat: "#f59e0b", mane: "#fff", jersey: "#e11d48", cap: "#fb7185" },
+      { name: "Kauê", coat: "#78350f", mane: "#451a03", jersey: "#059669", cap: "#34d399" },
+      { name: "Gregório", coat: "#1e293b", mane: "#0f172a", jersey: "#ca8a04", cap: "#fde047" }
+    ];
+
+    let balance = 100;
+    let isRacing = false;
+    let skyColorType = "pink";
+    let winner = null;
+    let selectedRunner = "";
+    let betValue = 20;
+
+    let runners = [];
+    let dustParticles = [];
+
+    function resetRace() {
+      skyColorType = Math.random() < 0.5 ? "pink" : "blue";
+      const pool = skyColorType === "pink" ? groupPink : groupBlue;
+      winner = pool[Math.floor(Math.random() * pool.length)];
+
+      runners = runnersData.map((r, index) => {
+        return {
+          ...r,
+          x: 40,
+          y: 110 + index * 48,
+          frame: 0,
+          animSpeed: 0.15 + Math.random() * 0.05,
+          isWinner: r.name === winner
+        };
+      });
+
+      dustParticles = [];
+    }
+
+    function drawScene() {
+      // Céu Degradê Sunset/Sunny
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, 95);
+      if (skyColorType === "pink") {
+        skyGrad.addColorStop(0, "#f43f5e");
+        skyGrad.addColorStop(0.5, "#fb7185");
+        skyGrad.addColorStop(1, "#fbcfe8");
+      } else {
+        skyGrad.addColorStop(0, "#0284c7");
+        skyGrad.addColorStop(0.5, "#38bdf8");
+        skyGrad.addColorStop(1, "#bae6fd");
+      }
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvas.width, 95);
+
+      // Sol Retrô
+      ctx.fillStyle = skyColorType === "pink" ? "#fef08a" : "#fff7ed";
+      ctx.beginPath();
+      ctx.arc(700, 45, 25, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Nuvens estilizadas
+      ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+      ctx.fillRect(100, 25, 60, 12);
+      ctx.fillRect(120, 18, 40, 10);
+      ctx.fillRect(400, 35, 80, 14);
+
+      // Cerca/Arquibancada ao Fundo
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillRect(0, 85, canvas.width, 10);
+      for (let x = 0; x < canvas.width; x += 30) {
+        ctx.fillStyle = "#64748b";
+        ctx.fillRect(x, 75, 4, 20);
+      }
+
+      // Pista de Corrida (Terra)
+      ctx.fillStyle = "#15803d"; // Grama
+      ctx.fillRect(0, 95, canvas.width, 10);
+
+      ctx.fillStyle = "#a16207"; // Pista de terra
+      ctx.fillRect(0, 105, canvas.width, 315);
+
+      // Linhas divisorias
+      ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+      for (let i = 0; i <= 6; i++) {
+        ctx.fillRect(0, 105 + i * 48, canvas.width, 2);
+      }
+
+      // Linha de Chegada em Xadrez
+      const finishX = 700;
+      for (let y = 105; y < 390; y += 12) {
+        ctx.fillStyle = (y / 12) % 2 === 0 ? "#ffffff" : "#0f172a";
+        ctx.fillRect(finishX, y, 10, 12);
+        ctx.fillRect(finishX + 10, y + (y / 12 % 2 === 0 ? 0 : 0), 10, 12);
+      }
+
+      // Partículas de Poeira levantadas pelos cavalos
+      dustParticles.forEach((p, index) => {
+        ctx.fillStyle = `rgba(217, 119, 6, ${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        p.x -= 1.5;
+        p.alpha -= 0.03;
+        p.size += 0.1;
+        if (p.alpha <= 0) dustParticles.splice(index, 1);
+      });
+
+      // Desenhar Cavalos e Jóqueis
+      runners.forEach((r) => {
+        drawPixelHorse(r);
+      });
+    }
+
+    function drawPixelHorse(r) {
+      ctx.save();
+      ctx.translate(r.x, r.y);
+
+      // Animação de Ciclo de Corrida (4 Frames de Trote)
+      const frameIndex = Math.floor(r.frame) % 4;
+
+      // Sombra no Chão
+      ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+      ctx.beginPath();
+      ctx.ellipse(25, 32, 20, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Posição das Pernas por Frame
+      const legPositions = [
+        { front1: 10, front2: -10, back1: -12, back2: 12, bodyY: 0 },
+        { front1: 18, front2: -5, back1: -5, back2: 5, bodyY: -2 },
+        { front1: -12, front2: 12, back1: 10, back2: -10, bodyY: 0 },
+        { front1: -5, front2: 5, back1: 18, back2: -5, bodyY: -2 }
+      ];
+
+      const leg = legPositions[frameIndex];
+
+      // Pernas Traseiras (Escuras)
+      ctx.strokeStyle = "#451a03";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(10, 18 + leg.bodyY); ctx.lineTo(10 + leg.back2, 32);
+      ctx.moveTo(35, 18 + leg.bodyY); ctx.lineTo(35 + leg.front2, 32);
+      ctx.stroke();
+
+      // Corpo do Cavalo
+      ctx.fillStyle = r.coat;
+      ctx.fillRect(8, 8 + leg.bodyY, 32, 14);
+
+      // Pernas Dianteiras
+      ctx.strokeStyle = r.coat;
+      ctx.beginPath();
+      ctx.moveTo(12, 18 + leg.bodyY); ctx.lineTo(12 + leg.back1, 32);
+      ctx.moveTo(38, 18 + leg.bodyY); ctx.lineTo(38 + leg.front1, 32);
+      ctx.stroke();
+
+      // Pescoço e Cabeça
+      ctx.fillRect(32, 0 + leg.bodyY, 10, 14);
+      ctx.fillRect(36, -4 + leg.bodyY, 12, 10);
+
+      // Crina (Cabelo do Cavalo)
+      ctx.fillStyle = r.mane;
+      ctx.fillRect(28, -2 + leg.bodyY, 6, 12);
+
+      // Rabo
+      ctx.fillRect(2, 8 + leg.bodyY, 8, 12);
+
+      // --- ALUNO (JÓQUEI) ---
+      // Corpo / Camiseta
+      ctx.fillStyle = r.jersey;
+      ctx.fillRect(22, -6 + leg.bodyY, 10, 12);
+
+      // Cabeça / Capacete de Jóquei
+      ctx.fillStyle = "#fde047";
+      ctx.fillRect(24, -14 + leg.bodyY, 8, 8);
+      ctx.fillStyle = r.cap;
+      ctx.fillRect(22, -16 + leg.bodyY, 12, 4); // Boné/Capacete
+
+      // Nome do Aluno
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 12px sans-serif";
+      ctx.shadowColor = "black";
+      ctx.shadowBlur = 4;
+      ctx.fillText(r.name, 0, -20);
+
+      ctx.restore();
+    }
+
+    function update() {
+      if (!isRacing) return;
+
+      let winnerReached = false;
+
+      runners.forEach((r) => {
+        let speedBoost = Math.random() * 2.3;
+
+        // Vantagem lógica para o Vencedor sorteado no Easter Egg
+        if (r.isWinner && r.x > 300) {
+          speedBoost += 0.65;
+        }
+
+        r.x += 1.3 + speedBoost;
+        r.frame += r.animSpeed;
+
+        // Criar fumaça/poeira no chão durante a corrida
+        if (Math.random() < 0.4) {
+          dustParticles.push({
+            x: r.x + 5,
+            y: r.y + 30,
+            size: 3 + Math.random() * 3,
+            alpha: 0.6
+          });
+        }
+
+        // Limite da linha de chegada
+        if (r.x > 680) {
+          r.x = 680;
+        }
+
+        if (r.x >= 680) {
+          winnerReached = true;
+        }
+      });
+
+      if (winnerReached) {
+        isRacing = false;
+        document.getElementById("startBtn").disabled = false;
+
+        setTimeout(() => {
+          if (selectedRunner === winner) {
+            const prize = betValue * 3;
+            balance += prize;
+            alert(`🎉 PARABÉNS! ${winner} VENCEU!\nVocê ganhou R$ ${prize}!`);
+          } else {
+            alert(`🏆 ${winner} venceu a corrida!\nSua aposta foi em ${selectedRunner}.`);
+          }
+          document.getElementById("balance").innerText = balance;
+        }, 80);
+      }
+    }
+
+    function startRace() {
+      const select = document.getElementById("runnerSelect");
+      const betInput = document.getElementById("betAmount");
+
+      selectedRunner = select.value;
+      betValue = parseInt(betInput.value) || 20;
+
+      if (betValue > balance) {
+        alert("Saldo insuficiente!");
+        return;
+      }
+
+      balance -= betValue;
+      document.getElementById("balance").innerText = balance;
+
+      isRacing = true;
+      document.getElementById("startBtn").disabled = true;
+
+      resetRace();
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      update();
+      drawScene();
+      requestAnimationFrame(gameLoop);
+    }
+
+    resetRace();
+    gameLoop();
+  </script>
+</body>
+</html>
